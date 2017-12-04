@@ -24,10 +24,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 2;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 0.3;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -57,8 +57,8 @@ UKF::UKF() {
 
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
-  P_ << 0.15, 0, 0, 0, 0,
-        0, 0.15, 0, 0, 0,
+  P_ << 1, 0, 0, 0, 0,
+        0, 1, 0, 0, 0,
         0, 0, 1, 0, 0,
         0, 0, 0, 1, 0,
         0, 0, 0, 0, 1;
@@ -119,7 +119,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     time_us_        = meas_package.timestamp_ ;
     is_initialized_ = true;
     std::cout << "initialized\n";
-  } else {
+  } else if ((meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_) ||
+             (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_)) {
     // Predict
     std::cout << "Predict\n";
     double dt = (meas_package.timestamp_ - time_us_) / 1000000.0;
@@ -129,11 +130,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     // Update
     std::cout << " use_laser_ : " << use_laser_ << ", use_radar_ : " << use_radar_ << endl;
-    if (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_){
+    if (meas_package.sensor_type_ == MeasurementPackage::LASER){
       std::cout << "Lidar Measurement Update\n";
       UpdateLidar(meas_package);
     }
-    else if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_){
+    else if (meas_package.sensor_type_ == MeasurementPackage::RADAR){
       std::cout << "Radar Measurement Update\n";
       UpdateRadar(meas_package);
     }
@@ -163,7 +164,8 @@ void UKF::Prediction(double delta_t) {
   std::cout << "Prediction - DT       : " << delta_t << endl;
   std::cout << "Prediction - Current P : " << P_ << endl;
   std::cout << "Prediction - Current x : " << x_ << endl;
-
+  std::cout << "Prediction - Weight : " << weights_ << endl;
+ 
   Xsig.col(0) = x_;
   for (int index = 0 ; index < n_x_; index++) {
     Xsig.col(index + 1)        = x_ + std::sqrt(lambda_+ n_x_) * A.col(index);
@@ -239,9 +241,10 @@ void UKF::Prediction(double delta_t) {
     VectorXd xdiff = Xsig_pred_.col(c) - x_;
 
     //angle normalization
-    //std::cout << "prediction - normalization x angle : " <<  xdiff(3) << endl;
+    std::cout << "prediction - normalization x angle : " <<  xdiff(3) << " , M_PI : " << M_PI <<  endl;
     while (xdiff(3)> M_PI) xdiff(3)-=2.*M_PI;
     while (xdiff(3)<-M_PI) xdiff(3)+=2.*M_PI;
+    std::cout << "prediction - normalized x angle : " <<  xdiff << endl;
 
     P_ = P_ + weights_(c) * xdiff * xdiff.transpose();
   }
