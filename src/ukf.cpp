@@ -24,10 +24,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 2;
+  std_a_ = 1; // 1 = [0.0700, 0.0836, 0.3368, 0.2409] Lowest, 2 = OK, 3 [OK but error is heigher then 1,2]
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.3;
+  std_yawdd_ = 0.6; // 0.3 = OK, 0.4 = OK, 0.5 = OK, 0.6 = OK [ 0.0656, 0.0824, 0.3273, 0.2270 ],
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
